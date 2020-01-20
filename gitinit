@@ -1,0 +1,8 @@
+#! /usr/bin/env bash
+
+git init
+git config --global user.email "erik.rairden@gmail.com"
+git config --global user.name "Rairden"
+git add .
+git commit -m "Initial commit"
+

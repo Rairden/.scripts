@@ -1,0 +1,19 @@
+#! /usr/bin/env bash
+
+start() {
+    systemctl start sshd
+    systemctl start fail2ban
+}
+
+status() {
+    systemctl status sshd
+    systemctl status fail2ban
+    fail2ban-client status sshd
+}
+
+stop() {
+    systemctl stop sshd
+    systemctl stop fail2ban
+}
+
+
