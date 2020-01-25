@@ -3,17 +3,20 @@
 start() {
     systemctl start sshd
     systemctl start fail2ban
+    return 0;
 }
 
 status() {
     systemctl status sshd
     systemctl status fail2ban
     fail2ban-client status sshd
+    return 0;
 }
 
 stop() {
     systemctl stop sshd
     systemctl stop fail2ban
+    return 0;
 }
 
 
