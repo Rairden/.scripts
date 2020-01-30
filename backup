@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+export COPYDIR=$(pwd)
+echo $COPYDIR
+cd ..
+echo $PWD
+rsync -n -avh --stats 10.0.0.2:${COPYDIR} .
+

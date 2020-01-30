@@ -2,21 +2,23 @@
 
 # desktop: 10.0.0.2     laptop: 10.0.0.3    rairden.us points to my desktop
 copyCollegeDir() {
-    SRC=$HOME/externalDrives/storage/College
-    DEST=$HOME/PC
-    rsync -avh"$n" --stats "$1":"$SRC" "$DEST"
-    echo "rsync -avh"$n" --stats "$1":"$SRC" "$DEST""
-    echo "ddd"
-    # rsync -avh --stats 10.0.0.2:~/Documents .
-    # rsync -avh --stats rairden.us:/home/erik/Documents .
+    src=$HOME/externalDrives/storage/College
+    dest=$HOME/PC
+    output=$(rsync -avh"$2" --stats "$1":"$src" "$dest")
+    echo -e "\n       Run cmd: rsync -avh$2 --stats $1:$src $dest"
+    createdFiles=$(echo "$output" | pcregrep -o1 "Number of created files:\s(.*)")
+    transferSize=$(echo "$output" | pcregrep -o1 "Total transferred file size:\s(.*)")
+
+    echo "     New files: $createdFiles"
+    echo "Transfer total: $transferSize"
 }
 
-n=$1
-MYIP=$(ip -4 addr)
+flag=$1
+myip=$(ip -4 addr)
 
-if [[ $MYIP =~ 10.0.0.3 ]]; then
-    copyDir "10.0.0.2" "$n"
+if [[ $myip =~ 10\.0\.0\.3 ]]; then
+    copyCollegeDir "10.0.0.2" "$flag"
     exit
 fi
 
-copyDir "rairden.us" "$n"
+copyCollegeDir "rairden.us" "$flag"
