@@ -3,20 +3,19 @@
 start() {
     systemctl start sshd
     systemctl start fail2ban
-    return 0;
+    systemctl start mariadb
 }
 
 status() {
     systemctl status sshd
     systemctl status fail2ban
+    systemctl status mariadb
     fail2ban-client status sshd
-    return 0;
 }
 
 stop() {
     systemctl stop sshd
     systemctl stop fail2ban
-    return 0;
+    systemctl stop mariadb
 }
-
 
