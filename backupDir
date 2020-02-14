@@ -2,15 +2,16 @@
 
 # desktop: 10.0.0.2     laptop: 10.0.0.3    rairden.us points to my desktop
 copyDir() {
-    copydir=$(pwd)
+    copyDir=$(pwd)
     cd ..
     upOne=$(pwd)
+
     if [ "$2" == "rev" ]; then
-        output=$(rsync -avh"$3" --stats "$copydir" "$1":"$upOne")
+        output=$(rsync -avh"$3" --stats "$copyDir" "$1":"$upOne")
         if [ "$3" == "n" ]; then
             echo -e "\n      (DRY RUN)"
         fi
-        echo -e "       Run cmd: rsync -avh$3 --stats $copydir $1:$copydir"
+        echo -e "       Run cmd: rsync -avh$3 --stats $copyDir $1:$copyDir"
         printSummary "$output"
         exit
     fi
@@ -18,8 +19,8 @@ copyDir() {
     if [ "$2" == "n" ]; then
         echo -e "\n      (DRY RUN)"
     fi
-    output=$(rsync -avh"$2" --stats "$1":"$copydir" .)
-    echo -e "       Run cmd: rsync -avh$2 --stats $1:$copydir ."
+    output=$(rsync -avh"$2" --stats "$1":"$copyDir" .)
+    echo -e "       Run cmd: rsync -avh$2 --stats $1:$copyDir ."
     printSummary "$output"
 }
 
@@ -32,9 +33,9 @@ printSummary() {
 
 rev=$1
 flag=$2
-myip=$(ip -4 addr)
+myIP=$(ip -4 addr)
 
-if [[ $myip =~ 10\.0\.0\.3 ]]; then
+if [[ $myIP =~ 10\.0\.0\.3 ]]; then
     copyDir "10.0.0.2" "$rev" "$flag"
     exit
 fi
