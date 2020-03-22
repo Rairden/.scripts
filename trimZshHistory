@@ -1,0 +1,37 @@
+#!/usr/bin/bash
+# The purpose of this script is to open the .zsh_history file,
+# then delete lines that only have a single char or "ls" commands.
+
+numberOfLines() {
+    numOfLines=$(wc -l "$zshHist" | pcregrep -o1 "(\d*)\s.*")
+}
+
+linesDeleted() {
+    numberOfLines
+    diff=$(($1 - numOfLines))
+    totalRemoved=$((diff + totalRemoved))
+    echo "      Removed: $diff line(s)"
+}
+
+trimHistory() {
+    numberOfLines
+    vim -c "$1" -cwq "$zshHist"                     # Open vim and send these cmds
+    linesDeleted "$numOfLines"
+}
+
+zshHist=/home/$USER/scratch/zshHist/zsh_history2    # location of my Zsh history file.
+fileName=$(basename zshHist)                        # name of file
+totalRemoved=0                                      # total lines deleted
+
+if [ -f "$zshHist" ]; then
+    echo "$fileName found"
+
+    trimHistory "g/^\w$/d"                          # delete lines with only a single char
+    trimHistory "g/^l[sl]\?\(\s\|$\)/d"             # delete: l, ll, ls, l -h, ... (https://regexr.com/4ujr7)
+
+    echo "Total removed: $totalRemoved line(s)"
+    exit
+fi
+
+echo "File does not exist"
+
