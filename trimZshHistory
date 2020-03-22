@@ -10,7 +10,7 @@ linesDeleted() {
     numberOfLines
     diff=$(($1 - numOfLines))
     totalRemoved=$((diff + totalRemoved))
-    echo "      Removed: $diff line(s)"
+    echo "      removed: $diff line(s)"
 }
 
 trimHistory() {
@@ -19,19 +19,19 @@ trimHistory() {
     linesDeleted "$numOfLines"
 }
 
-zshHist=/home/$USER/scratch/zshHist/zsh_history2    # location of my Zsh history file.
+zshHist=$HOME/.zsh_history                          # location of my Zsh history file.
 fileName=$(basename zshHist)                        # name of file
 totalRemoved=0                                      # total lines deleted
 
 if [ -f "$zshHist" ]; then
     echo "$fileName found"
 
-    trimHistory "g/^\w$/d"                          # delete lines with only a single char
+    trimHistory "g/^\w$/d"                          # delete: lines with only a single char
     trimHistory "g/^l[sl]\?\(\s\|$\)/d"             # delete: l, ll, ls, l -h, ... (https://regexr.com/4ujr7)
+    trimHistory "g/^su$\|^-$\|^\~$\|^cd\s\.*$/d"    # delete: su, -, ~, cd ..      (https://regexr.com/50saa)
 
     echo "Total removed: $totalRemoved line(s)"
     exit
 fi
 
 echo "File does not exist"
-
