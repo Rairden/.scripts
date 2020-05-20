@@ -1,4 +1,4 @@
-#! /usr/bin/bash
+#!/bin/bash
 
 # Allow piping to Sublime Text. Doesn't interfere with normal use.
 

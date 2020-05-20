@@ -1,4 +1,5 @@
-#!/usr/bin/bash
+#!/bin/bash
+
 # The purpose of this script is to open the .zsh_history file,
 # then delete lines that only have a single char or "ls" commands.
 
@@ -26,8 +27,9 @@ if [ -f "$zshHist" ]; then
     echo -e "      editing: ~/.zsh_history\n"
 
     trimHistory "g/^\w$/d"                          # delete: lines with only a single char
-    trimHistory "g/^l[sl]\?\(\s\|$\)/d"             # delete: l, ll, ls, l -h, ... (https://regexr.com/4ujr7)
-    trimHistory "g/^su$\|^-$\|^\~$\|^cd\s\.*$/d"    # delete: su, -, ~, cd ..      (https://regexr.com/50saa)
+    trimHistory "g/^l[sl]\?\($\|\s[^*]*$\)/d"       # delete: l, ll, ls, l -h, ...  (https://regexr.com/4ujr7)
+    trimHistory "g/^su$\|^-$\|^\~$\|^cd\s\.*$/d"    # delete: su, -, ~, cd ..       (https://regexr.com/50saa)
+    trimHistory "g/ln -s\s\+[^/~$]/d"               # delete: illegal symlinks      (https://regexr.com/514tf)
 
     echo -e "\nTotal removed: $totalRemoved line(s)"
     exit

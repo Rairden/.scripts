@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 # desktop: 10.0.0.2     laptop: 10.0.0.3    rairden.us points to my desktop
 copyDir() {
