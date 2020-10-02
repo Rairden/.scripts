@@ -3,7 +3,7 @@
 # Showing examples of how to use this script:
 # a=$(ps aux | rg java) 
 # b=$(ps aux | rg java) 
-# difffy $a $b
+# diffy $a $b
 
 a=$1
 b=$2

@@ -1,0 +1,12 @@
+#!/bin/bash
+
+cp ~/Documents/gitignore/Java/gitignore-template .
+
+if [ $? -ne 0 ]; then
+    exit 2
+fi
+
+mv gitignore-template .gitignore
+gitinit
+git checkout -b develop
+

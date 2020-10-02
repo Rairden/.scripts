@@ -1,0 +1,35 @@
+#!/bin/bash
+
+# This script replaces the background color of a SVG file generated from running "go tool pprof memprofile.out"
+
+# Steps to reproduce:
+#   go test code/haypoints -bench=. -benchmem -memprofile memprofile.out -cpuprofile profile.out
+#   go tool pprof memprofile.out
+#   (pprof) web
+#   (pprof) weblist code/haypoints
+
+# web creates a SVG file. weblist creates a HTML file. Both have white backgrounds.
+
+# How to run:
+# cd to your svg/html files. Then run this script with no arguments, or a css color code (default is dark gray).
+#   ./gosvg
+#   ./gosvg C87474
+#   ./gosvg fff
+
+myFiles="ls *.svg *.html"
+colors=$1
+
+if [ $# -eq 0 ]; then
+    colors="464646"
+fi
+
+for eachfile in $myFiles; do
+    if [[ "$eachfile" =~ .*svg ]]; then
+        sed -i "/svg width/a <style> svg {background-color: #$colors} </style>" "$eachfile"
+        sed -i "s/white/#$colors/" "$eachfile"
+    fi
+
+    if [[ "$eachfile" =~ .*html ]]; then
+        sed -i "/font-family/a background-color: #$colors;" "$eachfile"
+    fi
+done
