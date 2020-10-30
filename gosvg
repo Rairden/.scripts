@@ -16,20 +16,26 @@
 #   ./gosvg C87474
 #   ./gosvg fff
 
-myFiles="ls *.svg *.html"
+myFiles=$(grep -rlP --exclude-dir={.git,} ".*(svg|html)")
+
 colors=$1
 
 if [ $# -eq 0 ]; then
     colors="464646"
 fi
 
-for eachfile in $myFiles; do
-    if [[ "$eachfile" =~ .*svg ]]; then
-        sed -i "/svg width/a <style> svg {background-color: #$colors} </style>" "$eachfile"
-        sed -i "s/white/#$colors/" "$eachfile"
+for file in $myFiles; do
+    echo "$file"
+    if [[ "$file" =~ .*svg ]]; then
+        if grep -q white "$file"; then
+            sed -i "s/white/#$colors/" "$file"
+            sed -i "/svg width/a <style> svg {background-color: #$colors} </style>" "$file"
+        fi
     fi
 
-    if [[ "$eachfile" =~ .*html ]]; then
-        sed -i "/font-family/a background-color: #$colors;" "$eachfile"
+    if [[ "$file" =~ .*html ]]; then
+        if ! grep -q rairden "$file"; then
+            sed -i "/font-family/a background-color: #$colors;  <!-- rairden edit gosvg -->" "$file"
+        fi
     fi
 done

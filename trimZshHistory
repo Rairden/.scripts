@@ -16,20 +16,28 @@ linesDeleted() {
 
 trimHistory() {
     numberOfLines
-    vim -c "$1" -cwq "$zshHist"                     # Open vim and send these cmds
+    perl -i -nle "$1" "$zshHist"    # use perl instead of vim
+    # vim -c "$1" -cwq "$zshHist"   # open vim and send these cmds
     linesDeleted "$numOfLines"
 }
 
-zshHist=$HOME/.zsh_history                          # location of my Zsh history file.
-totalRemoved=0                                      # total lines deleted
+zshHist=$HOME/.zsh_history          # location of my Zsh history file
+totalRemoved=0                      # total lines deleted
 
 if [ -f "$zshHist" ]; then
     echo -e "      editing: ~/.zsh_history\n"
 
-    trimHistory "g/^\w$/d"                          # delete: lines with only a single char
-    trimHistory "g/^l[sl]\?\($\|\s[^*]*$\)/d"       # delete: l, ll, ls, l -h, ...  (https://regexr.com/4ujr7)
-    trimHistory "g/^su$\|^-$\|^\~$\|^cd\s\.*$/d"    # delete: su, -, ~, cd ..       (https://regexr.com/50saa)
-    trimHistory "g/ln -s\s\+[^/~$]/d"               # delete: illegal symlinks      (https://regexr.com/514tf)
+    # vim
+    #trimHistory "g/^\w$/d"                             # delete: single char           (https://regexr.com/5f6us)
+    #trimHistory "g/^l[sl]\?\($\|\s[^*]*$\)/d"          # delete: l, ll, ls, l -h, ..   (https://regexr.com/4ujr7)
+    #trimHistory "g/^su$\|^-$\|^\~$\|^cd\s\.*$/d"       # delete: su, -, ~, cd ..       (https://regexr.com/50saa)
+    #trimHistory "g/ln -s\s\+[^/~$]/d"                  # delete: illegal symlinks      (https://regexr.com/514tf)
+
+    # perl
+    trimHistory "print if !/^\w$/"                      # single char
+    trimHistory "print if !/^l[sl]?($|\s[^*\n]*$)/"     # ll
+    trimHistory "print if !/^su$|^-$|^~$|^cd\s\.*$/"    # su
+    trimHistory "print if !/ln -s\s+\[^\/~\$\]/"        # symlink 
 
     echo -e "\nTotal removed: $totalRemoved line(s)"
     exit
