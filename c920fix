@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# Fix the issue with obs-studio lag. Cam defaults to exposure which causes lag.
+
+v4l2-ctl -d /dev/video0 --set-ctrl=exposure_auto=1

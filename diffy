@@ -7,14 +7,14 @@
 
 a=$1
 b=$2
-file=/home/erik/.cache/tmp.patch
+file=/home/$USER/.cache/tmp.patch
 
 if [ "$#" = 0 ] || [ "$#" = 1 ]; then
     echo "Enter two or more arguments."
     exit 1
 else
-    diff -rup <(echo "$a") <(echo "$b") > $file
+    diff -rup <(echo "$a") <(echo "$b") > "$file"
     colordiff -rup <(echo "$a") <(echo "$b")
 
-    vim $file
+    vim "$file"
 fi

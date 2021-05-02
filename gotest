@@ -1,0 +1,14 @@
+#!/bin/bash
+
+rm *.test; rm *.out; rm primesieve
+
+if [[ $# -eq 0 ]];then
+    go test -v -bench="BenchmarkRun" -run=^a
+    exit
+fi
+
+if [[ $1 = 'pprof' ]];then
+#    go test -v -bench="BenchmarkRun" -benchtime=1x -cpuprofile profile.out -run=^$
+#    go test -v -bench="BenchmarkRun" -benchmem -memprofile memprofile.out -cpuprofile profile.out -run=^$
+    go test -v -bench="BenchmarkRun" -benchtime=1x -benchmem -memprofile memprofile.out -cpuprofile profile.out -run=^$
+fi
