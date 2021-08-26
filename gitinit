@@ -9,16 +9,11 @@
 #   3) Run ./gitinit X       (replace X with a lang: go, java, c, python)
 #          ./gitinit java
 
-cfg() {
-    git config --global user.email "erik.rairden@gmail.com"
-    git config --global user.name "Rairden"
-}
-
 gitinit() {
 	git init
-	cfg
-	git checkout -b dev
-    echo "Add a .gitignore file."
+    git add .
+    git commit -m "Initial commit"
+    git checkout -b dev
 }
 
 if [ $# -eq 0 ]; then

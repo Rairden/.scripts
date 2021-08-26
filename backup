@@ -28,6 +28,7 @@ copyDir() {
         if [ "$3" == "-n" ]; then
             echo -e "\n      (DRY RUN)"
         fi
+
         echo -e "       Run cmd: rsync -avh $3 --stats $copyDir $1:$copyDir"
         printSummary "$output"
         exit
