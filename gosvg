@@ -3,39 +3,40 @@
 # This script replaces the background color of a SVG file generated from running "go tool pprof memprofile.out"
 
 # Steps to reproduce:
-#   go test code/haypoints -bench=. -benchmem -memprofile memprofile.out -cpuprofile profile.out
-#   go tool pprof memprofile.out
-#   (pprof) web
-#   (pprof) weblist code/haypoints
+#	go test code/haypoints -bench=. -benchmem -memprofile memprofile.out -cpuprofile profile.out
+#	go tool pprof memprofile.out
+#	(pprof) web
+#	(pprof) weblist code/haypoints
 
 # web creates a SVG file. weblist creates a HTML file. Both have white backgrounds.
 
 # How to run:
 # cd to your svg/html files. Then run this script with no arguments, or a css color code (default is dark gray).
-#   ./gosvg
-#   ./gosvg C87474
-#   ./gosvg fff
+#	./gosvg
+#	./gosvg C87474
+#	./gosvg fff
 
 myFiles=$(grep -rlP --exclude-dir={.git,} ".*(svg|html)")
 
 colors=$1
 
 if [ $# -eq 0 ]; then
-    colors="464646"
+	colors="464646"
 fi
 
 for file in $myFiles; do
-    echo "$file"
-    if [[ "$file" =~ .*svg ]]; then
-        if grep -q white "$file"; then
-            sed -i "s/white/#$colors/" "$file"
-            sed -i "/svg width/a <style> svg {background-color: #$colors} </style>" "$file"
-        fi
-    fi
+	if [[ "$file" = *.svg ]]; then
+		if grep -q white "$file"; then
+			echo "$file"
+			sed -i "s/white/#$colors/" "$file"
+			sed -i "/svg width/a <style> svg {background-color: #$colors} </style>" "$file"
+		fi
+	fi
 
-    if [[ "$file" =~ .*html ]]; then
-        if ! grep -q rairden "$file"; then
-            sed -i "/font-family/a background-color: #$colors;  <!-- rairden edit gosvg -->" "$file"
-        fi
-    fi
+	if [[ "$file" = *.html ]]; then
+		if ! grep -q rairden "$file"; then
+			echo "$file"
+			sed -i "/font-family/a background-color: #$colors;	<!-- rairden edit gosvg -->" "$file"
+		fi
+	fi
 done

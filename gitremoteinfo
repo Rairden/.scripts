@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# colors
+red='\033[0;31m'
+nc='\033[0m'
+
+remoteInfo() {
+	echo -e "${red}git remote -v${nc}"
+	git remote -v
+	echo -e "${red}git remote show origin${nc}"
+	git remote show origin
+	echo -e "${red}git remote show -n origin${nc}"
+	git remote show -n origin
+	echo -e "${red}git remote show -n${nc}"
+	git remote show -n
+	echo -e "${red}git config --get remote.origin.url${nc}"
+	git config --get remote.origin.url
+}
+
+remoteInfo

@@ -1,0 +1,13 @@
+#!/bin/bash
+
+dst="$HOME/scratch/backup"
+
+rsync -a --stats --delete ~/.dotfiles "$dst"
+rsync -a --stats --delete ~/.scripts "$dst"
+
+rsync -a --stats --delete  ~/IdeaProjects "$dst"
+rsync -a --stats --delete  ~/PycharmProjects "$dst"
+rsync -a --stats --delete  ~/WebstormProjects "$dst"
+rsync -a --stats --delete  ~/MyWebsites "$dst"
+rsync -a --stats --delete  ~/Notes "$dst"
+rsync -a --stats --delete "$GOPATH"/src "$dst"

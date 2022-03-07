@@ -1,0 +1,8 @@
+#!/bin/bash
+
+s2prot -details *.SC2Replay > details.json
+s2prot -initdata *.SC2Replay > initdata.json
+s2prot -msgevts *.SC2Replay > msgevts.json
+s2prot -attrevts *.SC2Replay > attrevts.json
+s2prot -trackerevts *.SC2Replay > trackerevts.json
+s2prot -gameevts *.SC2Replay > gameevts.json

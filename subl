@@ -4,12 +4,12 @@
 
 # Is stdin a terminal?
 if test -t 0; then
-    # Stdin is a terminal.
-    # Open sublime normally.
-    /usr/bin/subl "$@"
+	# Stdin is a terminal.
+	# Open sublime normally.
+	/usr/bin/subl "$@"
 else
-    # Stdin is not a terminal, it must be a pipe.
-    # Pipe stdin to a temporary file, and open it in sublime.
-    FILENAME='/home/erik/.cache/tmp.log'
-    cat > $FILENAME && /usr/bin/subl $FILENAME "$@"
+	# Stdin is not a terminal, it must be a pipe.
+	# Pipe stdin to a temporary file, and open it in sublime.
+	FILENAME='/home/erik/.cache/tmp.log'
+	cat > $FILENAME && /usr/bin/subl $FILENAME "$@"
 fi

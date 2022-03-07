@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# Converts a file from tabs to spaces, or vice versa.
+# Usage: ./tabify {spaces|tabs} [glob]
+#	./tabify spaces
+#	./tabify spaces "*.txt"
+#	./tabify tabs "*.md"
+
+format=$1
+glob=$2
+
+if [ $# -eq 0 ]; then
+	echo "Usage: ./tabify {spaces|tabs} [glob]"
+	exit
+fi
+
+if [ -z "$2" ]; then
+	glob="*"
+fi
+
+if [ "$format" == "spaces" ]; then
+	# tabs to spaces
+	find . -name "$glob" ! -path "*.git/*" ! -type d -exec bash -c 'expand -t 4 "$0" > /tmp/e && mv /tmp/e "$0"' {} \;
+elif [ "$format" == "tabs" ]; then
+	# spaces to tabs
+	find . -name "$glob" ! -path "*.git/*" ! -type d -exec bash -c 'unexpand -t 4 "$0" > /tmp/e && mv /tmp/e "$0"' {} \;
+fi

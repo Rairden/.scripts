@@ -10,11 +10,11 @@ b=$2
 file=/home/$USER/.cache/tmp.patch
 
 if [ "$#" = 0 ] || [ "$#" = 1 ]; then
-    echo "Enter two or more arguments."
-    exit 1
+	echo "Enter two or more arguments."
+	exit 1
 else
-    diff -rup <(echo "$a") <(echo "$b") > "$file"
-    colordiff -rup <(echo "$a") <(echo "$b")
+	diff -rup <(echo "$a") <(echo "$b") > "$file"
+	colordiff -rup <(echo "$a") <(echo "$b")
 
-    vim "$file"
+	vim "$file"
 fi

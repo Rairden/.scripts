@@ -1,53 +1,53 @@
 #!/bin/bash
 
 # Rsync usage
-#   rsync -a src dest
-#   rsync ip:dir ip:dir
-#   rsync -avh file.zip erik@108.61.119.116:~/Docs
+#	rsync -a src dest
+#	rsync ip:dir ip:dir
+#	rsync -avh file.zip erik@108.61.119.116:~/Docs
 
-# How to use script:
-#   0) Both sender/receiver must have the same directory layout. No spaces allowed in either path.
-#   1) Navigate to the directory you want to backup
-#   2) Run one of these two commands
-#       A) backup copyDir 108.61.119.116
-#       B) backup copyDir 108.61.119.116 send -n
+# Usage:
+#	0) Both sender/receiver must have the same directory layout. No spaces allowed in either path.
+#	1) Navigate to the directory you want to backup
+#	2) Run one of these two commands
+#		A) backup copyDir 108.61.119.116
+#		B) backup copyDir 108.61.119.116 send -n
 #
-# To receive:   run A
-# To send:      run B
+# To receive:	run A
+# To send:		run B
 #
 # Arguments:
-#   -n   = dry run
-#   send = you send files to remote
+#	-n	 = dry run
+#	send = you send files to remote
 
 copyDir() {
-    copyDir=$(pwd)
-    parentDir=$(cd .. && pwd)
+	copyDir=$(pwd)
+	parentDir=$(cd .. && pwd)
 
-    if [ "$2" == "send" ]; then
-        output=$(rsync -avh $3 --stats "$copyDir" "$1":"$parentDir")
-        if [ "$3" == "-n" ]; then
-            echo -e "\n      (DRY RUN)"
-        fi
+	if [ "$2" == "send" ]; then
+		output=$(rsync -avh $3 --stats "$copyDir" "$1":"$parentDir")
+		if [ "$3" == "-n" ]; then
+			echo -e "\n      (DRY RUN)"
+		fi
 
-        echo -e "       Run cmd: rsync -avh $3 --stats $copyDir $1:$copyDir"
-        printSummary "$output"
-        exit
-    fi
+		echo -e "       Run cmd: rsync -avh $3 --stats $copyDir $1:$copyDir"
+		printSummary "$output"
+		exit
+	fi
 
-    if [ "$2" == "-n" ]; then
-        echo -e "\n      (DRY RUN)"
-    fi
+	if [ "$2" == "-n" ]; then
+		echo -e "\n      (DRY RUN)"
+	fi
 
-    output=$(rsync -avh $2 --stats "$1":"$copyDir" "$parentDir")
-    echo -e "       Run cmd: rsync -avh $2 --stats $1:$copyDir $parentDir"
-    printSummary "$output"
+	output=$(rsync -avh $2 --stats "$1":"$copyDir" "$parentDir")
+	echo -e "       Run cmd: rsync -avh $2 --stats $1:$copyDir $parentDir"
+	printSummary "$output"
 }
 
 printSummary() {
-    createdFiles=$(echo "$1" | pcregrep -o1 "Number of created files:\s(.*)")
-    transferSize=$(echo "$1" | pcregrep -o1 "Total transferred file size:\s(.*)")
-    echo "     New files: $createdFiles"
-    echo "Transfer total: $transferSize"
+	createdFiles=$(echo "$1" | pcregrep -o1 "Number of created files:\s(.*)")
+	transferSize=$(echo "$1" | pcregrep -o1 "Total transferred file size:\s(.*)")
+	echo "     New files: $createdFiles"
+	echo "Transfer total: $transferSize"
 }
 
 "$@"
