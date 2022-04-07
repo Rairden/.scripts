@@ -1,0 +1,93 @@
+#!/bin/bash
+
+usage() {
+	script="./$(basename "$0")"
+
+	cat << DOC
+
+	Usage: $script [options] url
+
+	Clones a git repo. Makes one directory for each username (edit dir=).
+	To automatically cd into the project directory, source this script (source $script url).
+
+	To download many repos at once you could run:
+		while read -r line; do $script \$line; done < in.txt
+
+	This script requires the dependency pcregrep. Install with either:
+		sudo apt-get install pcregrep
+		sudo pacman -S pcre
+
+	Options:
+		-b, --basic         uses basic regex
+		-a, --advanced      uses advanced regex (default)
+		-h, --help          show this help message
+DOC
+	exit 1
+}
+
+if [ $# -eq 0 ]; then
+	usage
+fi
+
+dir="$HOME/repos"
+basic=false
+
+[ -d "$dir" ] || mkdir "$dir"
+cd "$dir" || exit 1
+
+while [ "$1" != "" ]; do
+	case $1 in
+	-b | --basic)
+		basic=true
+		regex="(https://|git@)git(hub|lab)\.com(/|:)(\w+).*\.git"
+		url=$2
+		break
+		;;
+	-a | --advanced)
+		regexFilter="((\w|-)+)/((\w|-)+$)"
+		;;
+	-h | --help)
+		usage
+		;;
+	*)
+		regex="((git|ssh|http(s)?)|(git@[\w\.]+))(:(//)?)([\w\.@\:/\-~]+)(\.git)(/)?"
+		regexFilter="((\w|-)+)/((\w|-)+$)"
+		url=$1
+		;;
+	esac
+	shift
+done
+
+echo "$url" | pcregrep -q "$regex"
+if [ $? -ne 0 ]; then
+	echo "Not a proper git repo URL."
+	return 1 2> /dev/null	# safely exit if sourced
+	exit 1
+fi
+
+if $basic; then
+	repo=$(echo "$url" | pcregrep "$regex")
+	user=$(echo "$repo" | pcregrep -o4 "$regex")
+	proj="$(basename "$repo" .git)"
+else
+	repo=$(echo "$url" | pcregrep -o7 "$regex")
+	user=$(echo "$repo" | pcregrep -o1 "$regexFilter")
+	proj=$(echo "$repo" | pcregrep -o3 "$regexFilter")
+fi
+
+[ -d "$user" ] || mkdir "$user"
+cd "$user" || exit 1
+
+if [ -d "$proj" ]; then
+	echo "Repo already exists."
+
+	if [ "${BASH_SOURCE[0]}" != "$0" ]; then
+		cd - > /dev/null || exit 1
+		return 1
+	fi
+
+	exit
+fi
+
+git clone "$url"
+cd "$proj" || exit 1

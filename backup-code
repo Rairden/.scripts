@@ -2,6 +2,8 @@
 
 dst="$HOME/scratch/backup"
 
+[ -d "$dst" ] || exit 1
+
 rsync -a --stats --delete ~/.dotfiles "$dst"
 rsync -a --stats --delete ~/.scripts "$dst"
 

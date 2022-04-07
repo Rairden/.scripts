@@ -1,0 +1,4 @@
+#!/bin/bash
+
+[ -f .gitignore ] && rm .gitignore
+[ -d .git ] && rm -rf .git

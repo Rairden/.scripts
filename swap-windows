@@ -1,0 +1,91 @@
+#!/bin/bash
+
+# Usage: Swap two windows on two separate monitors (fullscreen or not)
+#	1) Get two windows in your "alt tab" most recently used (MRU) history.
+#	2) Run this script w/ a hotkey
+# The problem with using both xdotool and wmctrl is they are incompatible. PID vs windowID.
+# xdotool uses PID for cmds and lists their windowID in hex (not decimal). wmctrl uses windowID.
+
+# sudo pacman -S xdotool wmctrl
+
+# example output from "xdotool getactivewindow getwindowgeometry"
+geo() {
+	cat << EOF
+Window 75497509
+  Position: 2560,37 (screen: 0)
+  Geometry: 2560x1403
+EOF
+}
+
+altTab() {
+	# https://askubuntu.com/a/302655
+	xdotool keydown alt key Tab
+	sleep 0.1
+	xdotool keyup alt
+}
+
+altTabTab() {
+	xdotool keydown alt key Tab Tab
+	sleep 0.1
+	xdotool keyup alt
+}
+
+move() {
+	id=$1
+	x=$2
+	y=$3
+	# xdotool getactivewindow windowmove "$x" "$y"		# works
+	wmctrl -ir "$id" -b remove,maximized_vert,maximized_horz
+	xdotool windowmove "$id" "$x" "$y"
+	wmctrl -ir "$id" -b add,maximized_vert,maximized_horz
+}
+
+# I have two 2560x1440 monitors. This func returns "5120"
+getFullWidth() {
+	fullWidth=$(xdpyinfo | awk '/dimensions:/ {print $2}' | cut -d "x" -f1)
+}
+
+getWindowID2() {
+	# Don't use this. "xdotool getactivewindow" gives the same windowID. This is not the PID.
+	id2=$(printf "%d" "$(xprop -root | pcregrep -o1 "_NET_ACTIVE_WINDOW\(WINDOW\): window id # (.*)")")
+}
+
+getWindowID() {
+	id=$(xdotool getactivewindow)
+}
+
+main() {
+	sleep 0.6
+	win1ID=$(xdotool getactivewindow)
+	win1=$(xdotool getwindowgeometry "$win1ID")
+	altTabTab
+	sleep 0.1
+	win2ID=$(xdotool getactivewindow)
+	win2=$(xdotool getwindowgeometry "$win2ID")
+
+	win1Coords=$(echo "$win1" | awk '{if (NR == 2) print $2}')
+	win2Coords=$(echo "$win2" | awk '{if (NR == 2) print $2}')
+
+	# win1Desktop=$(echo "$win1Coords" | awk '{print substr($4, 1, length($4)-1)}')
+	# win2Desktop=$(echo "$win2Coords" | awk '{print substr($4, 1, length($4)-1)}')
+
+	win1Desktop=$(xdotool get_desktop_for_window $win1ID)
+	win2Desktop=$(xdotool get_desktop_for_window $win2ID)
+
+	if [[ $win1Desktop -ne $win2Desktop ]]; then
+		echo "The two windows need to be on the same desktop number."
+		exit 1
+	fi
+
+	# KDE/plasma doesn't support "xdotool get_desktop_viewport" (x/y coords), so do it manually with awk
+	win1x=$(echo "$win1Coords" | awk -F "," '{print $1}')
+	win1y=$(echo "$win1Coords" | awk -F "," '{print $2}')
+
+	win2x=$(echo "$win2Coords" | awk -F "," '{print $1}')
+	win2y=$(echo "$win2Coords" | awk -F "," '{print $2}')
+
+	move "$win1ID" "$win2x" "$win2y"
+	move "$win2ID" "$win1x" "$win1y"
+}
+
+main

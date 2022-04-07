@@ -1,12 +1,11 @@
 #!/bin/bash
 
-# rg "$search" works, but includes dir names. Fix that with rg "${search}[^/]*$"
-# rg is case-insensitive by default, otherwise it is equivalent to grep -P
-
 if [ $# -eq 0 ]; then
-	echo "Usage: ./finder search"
+	echo "Usage: ./$(basename "$0") search"
 	exit
 fi
 
-search=$1
-find . ! -path "*.git/*" ! -path "*/venv/*" -type f -printf "%P\n"	| rg "${search}[^/]*$"
+search="$1"
+find ! \( -path "*/.git" -prune \
+		-o -path "*/venv" -prune \
+		-o -path "*/.idea" -prune \) -type f | rg -i "/${search}[^/]*$"

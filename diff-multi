@@ -1,0 +1,43 @@
+#!/bin/bash
+
+# This script is to quickly diff multiple files. If two files are different, it will print the name of the file.
+
+# Usage: ./diff-multi [glob]
+# For example: https://github.com/Blizzard/s2protocol/tree/master/s2protocol/versions
+# Starting at protocol 70154, there have only been 4 changes.
+#	./protocol75689.py
+#	./protocol77379.py
+#	./protocol80669.py
+#	./protocol80949.py
+
+numFiles=$(find . -type f | wc -l)
+if [ "$numFiles" -lt 2 ]; then
+	echo "You need two or more files to compare."
+	exit 1
+fi
+
+glob=$1
+baseFile=$(find . -type f -name "${glob:-*}" | sort | head -1)
+
+if [ -z "$baseFile" ]; then
+	echo -e "Your glob pattern returned 0 results: '$glob'"
+	exit 21
+fi
+
+echo -e "If two files are different, print the filename.\n"
+echo "$(basename "$baseFile")    <-- base file"
+
+shopt -s globstar	# required for recursive **/*
+cnt=0
+for f in **/$glob*; do
+	[ ! -f "$f" ] && continue
+	out=$(diff -rup "$baseFile" "$f")
+
+	if [ -n "$out" ]; then
+		echo "$f"
+		baseFile=$f
+		((cnt++))
+	fi
+done
+
+echo -e "\n$cnt different files."

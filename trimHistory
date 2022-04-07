@@ -1,0 +1,108 @@
+#!/bin/bash
+
+usage() {
+	script="./$(basename "$0")"
+
+	cat << DOC
+	Usage: $script PATH [function]
+
+	Using perl to make your terminal history cleaner.
+
+	Examples:
+		$script ~/.zsh_history
+		$script ~/.zsh_history trimCd
+
+	Options:
+		-h, --help          show this help message
+DOC
+	exit 1
+}
+
+setLineCnt() {
+	lineCnt=$(wc -l < "$zshHist")
+}
+
+countRemoved() {
+	setLineCnt
+	diff=$(($1 - lineCnt))
+	totalRemoved=$((diff + totalRemoved))
+	printf "%22s: %6s\n" "removed" "$diff"
+}
+
+trimHistory() {
+	setLineCnt
+	perl -i -nle "$1" "$zshHist"
+	countRemoved "$lineCnt"
+}
+
+trimSingle() {
+	# single char
+	trimHistory "print if !/^.$/"
+}
+
+trimLs() {
+	# ll, ls, l -h		(https://regex101.com/r/68bTiR)
+	trimHistory "print if !/^(ls|ll|l|lf)\s*$|^l[sl]?\s-\w{1,2}\s*$/"
+}
+
+trimCd() {
+	# su, -, ~, cd		(https://regex101.com/r/XRm8uN)
+	trimHistory "print if !/^su$|^-?$|^~$|^cd\.*$|^cd\s(\.*|-)$|^cd\s\w+$|^cd\s\w[^\/\n]+$|^\.+$/"
+}
+
+trimQuotesSingle() {
+	# remove lines w/ odd number of single quotes
+	setLineCnt
+	perl -i -nE '$n=tr/'"'"'/'"'"'/; ! print if not $n%2' "$zshHist"
+	countRemoved "$lineCnt"
+}
+
+trimQuotesDouble() {
+	# remove lines w/ odd number of double quotes
+	setLineCnt
+	perl -i -nE '$n=tr/"/"/; ! print if not $n%2' "$zshHist"
+	countRemoved "$lineCnt"
+}
+
+diffSummary() {
+	# skip if zsh_hist is unmodified
+	if ! git diff --exit-code "$zshHist" > /dev/null; then
+		git diff --unified=0 | grep '^[+-]' | less
+	fi
+	echo
+	git -P diff --stat "$zshHist"
+}
+
+trimAll() {
+	trimSingle
+	trimLs
+	trimCd
+	trimQuotesSingle
+	trimQuotesDouble
+}
+
+if [[ $# -eq 0 || $1 = -h || $1 = --help ]]; then
+	usage
+fi
+
+zshHist="$1"
+shift
+
+totalRemoved=0	# total lines deleted
+[ ! -f "$zshHist" ] && echo "File does not exist" && exit 1
+
+echo -e "[CMD] cp $zshHist $HOME/.zsh_history.bak\n"
+if ! cp "$zshHist" "$HOME"/.zsh_history.bak; then
+	echo "Failed to backup file"
+	exit 1
+fi
+
+if [ $# -eq 0 ]; then
+	trimAll
+else
+	"$*"
+fi
+
+# diffSummary
+printf "\n%22s: %6s\n" "Total removed" "$totalRemoved"
+printf "%22s: %6s\n" "$(basename "$zshHist") line cnt" "$(wc -l < "$zshHist")"

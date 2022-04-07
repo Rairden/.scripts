@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# Renames the default branch from master to main
+
+# xargs trims trailing whitespace
+#dev=$(git branch | grep -P "dev.*" | xargs)
+
+#branchesDiffer=$(git diff master.."$dev")
+#if [ -n "$branchesDiffer" ]; then
+#	echo "I usually want master/dev to be the same before continuing."
+#	echo "Branches differ. Exiting..."
+#	exit
+#fi
+
+renameBranch() {
+	printBranches
+
+	echo -e "\n[CMD] git branch -m master main"
+	git branch -m master main
+
+	echo -e "\n[CMD] git push -u origin main"
+	git push -u origin main
+
+	printBranches
+
+	echo -e "\nNow open your web browser:"
+	echo -e "\t1. Change the default branch from master to main."
+	echo -e "\t2. Delete the master branch."
+	echo -e "\t3. Run 'git fetch --prune'"
+}
+
+printBranches() {
+	echo -e "[CMD] git --no-pager branch -a"
+	git --no-pager branch -a
+}
+
+renameBranch

@@ -1,0 +1,96 @@
+#!/bin/bash
+
+usage() {
+	script="./$(basename "$0")"
+
+	cat << DOC
+
+	Usage: $script [OPTION]...
+
+	This script grabs your .gitignore templates from 'dir' depending on your programming language.
+
+	0) Place gitignore template files in a folder 'dir'. Name the files to contain a keyword (gitignore-go).
+	1) Edit 'dir' to point to your gitignore templates folder
+	2) cd to a project folder
+	3) Run $script X	   (replace X with a lang: go, c, python)
+
+	Options:
+		-n, --no-commit     setup, but do not commit
+		-h, --help          show this help message
+DOC
+	exit 1
+}
+
+gitinit() {
+	cd "$proj" || exit 1
+
+	if [ ! -f .gitignore ]; then
+		echo -e "[CMD] touch .gitignore\n"
+		touch .gitignore
+	fi
+
+	git init
+	git add .
+
+	if $commit; then
+		git commit -m "Initial commit"
+		git switch -c dev
+	fi
+}
+
+copyIgnore() {
+	cd "$dir" || exit 1
+	shopt -s globstar	# required for recursive **/*
+
+	local found=false
+	for file in **/*; do
+		if [[ ${file,,} =~ ${lang,,} ]]; then
+			cp "$dir/$file" "$proj/.gitignore"
+			echo -e "\nCopied file: $dir/$file\n"
+			found=true
+			break
+		fi
+	done
+
+	if ! $found; then
+		echo "Searching directory '$dir'"
+		echo "Searching for '$lang' found no files"
+	fi
+
+	cd "$proj" || exit 1
+}
+
+commit=true
+proj=$(pwd)
+
+if [ $# -eq 0 ]; then
+	gitinit
+	exit
+fi
+
+while [ "$1" != "" ]; do
+	case $1 in
+	-n | --no-commit)
+		commit=false
+		;;
+	-h | --help)
+		usage
+		;;
+	*)
+		lang=$1
+		;;
+	esac
+	shift
+done
+
+dir=$HOME/.dotfiles/gitignore
+if [ ! -d "$dir" ]; then
+	echo "Your gitignore template directory doesn't exist: $dir"
+	gitinit
+fi
+
+if [ -n "$lang" ]; then
+	copyIgnore
+fi
+
+gitinit

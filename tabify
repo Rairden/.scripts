@@ -1,27 +1,68 @@
 #!/bin/bash
 
-# Converts a file from tabs to spaces, or vice versa.
-# Usage: ./tabify {spaces|tabs} [glob]
-#	./tabify spaces
-#	./tabify spaces "*.txt"
-#	./tabify tabs "*.md"
+usage() {
+	script="./$(basename "$0")"
 
-format=$1
-glob=$2
+	cat << DOC
+
+	Usage: $script {-s|-t} PATTERN
+
+	Converts files from spaces to tabs, or vice versa.
+
+	Example: To convert a bunch of files to spaces that are named like "file123.py"
+		$script -s "fi*.py"
+
+	Both Sublime Text and VS Code space/tab convertor behave identically. They only touch leading characters,
+	and not inline text (say vertically aligned comments). This tool differs by converting the entire file.
+
+	Options:
+		-s, --spaces        convert file(s) to spaces
+		-t, --tabs          convert file(s) to tabs
+		-h, --help          show this help message
+DOC
+	exit 1
+}
+
+spaces=false
+tabs=false
 
 if [ $# -eq 0 ]; then
-	echo "Usage: ./tabify {spaces|tabs} [glob]"
-	exit
+	echo "Try '$script --help' for more information."
+	exit 1
 fi
 
-if [ -z "$2" ]; then
-	glob="*"
+while [ "$1" != "" ]; do
+	case $1 in
+	-s | --spaces)
+		spaces=true
+		;;
+	-t | --tabs)
+		tabs=true
+		;;
+	-h | --help)
+		usage
+		;;
+	*)
+		glob=$1
+		;;
+	esac
+	shift
+done
+
+if [ -z "$glob" ]; then
+	echo "error: must specify a glob pattern"
+	exit 1
 fi
 
-if [ "$format" == "spaces" ]; then
-	# tabs to spaces
-	find . -name "$glob" ! -path "*.git/*" ! -type d -exec bash -c 'expand -t 4 "$0" > /tmp/e && mv /tmp/e "$0"' {} \;
-elif [ "$format" == "tabs" ]; then
-	# spaces to tabs
-	find . -name "$glob" ! -path "*.git/*" ! -type d -exec bash -c 'unexpand -t 4 "$0" > /tmp/e && mv /tmp/e "$0"' {} \;
+if $spaces; then
+	exp="expand -t 4"
+elif $tabs; then
+	exp="unexpand -t 4"
+else
+	usage
 fi
+
+find ! \( -path "*/.git" -prune \
+		-o -path "*/venv" -prune \
+		-o -path "*/.idea" -prune \) -type f -name "$glob" \
+		-exec bash -c 'cp "$0" /tmp/e; $1 /tmp/e > "$0"; echo Reformatted: "$0"' {} "$exp" \;

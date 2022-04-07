@@ -1,0 +1,48 @@
+#!/bin/bash
+
+checkPath() {
+	out=$(type "$script" 2>/dev/null)
+	if [ $? -eq 0 ]; then
+		inPath=true
+	fi
+}
+
+inPath=false
+script="$1"
+scriptRelPath="$script"
+script="${script##*/}"	# so you can tab complete relative paths. And dot slash (./path/script) still works.
+checkPath
+
+if $inPath; then
+	echo "$out"
+	regex="is a (shell|reserved) ((key)?word|builtin)"
+
+	if [[ $out =~ $regex ]]; then
+		reserved=$(find /usr/bin -maxdepth 1 -type f -name "$script")
+		[ -z "$reserved" ] && exit 1
+		out="$reserved"
+	fi
+
+	path=$(echo "$out" | cut -d " " -f3)
+	encoding=$(file -b --mime-encoding "$path")
+
+	typeOf=$(file -b "$path" | awk -F "," '{print $1}')
+	echo -e "    $typeOf\n"
+	test "$encoding" = "binary" && exit
+
+	read -p "open file? [y,Y] " answer
+	echo
+	[[ $answer =~ [yY] ]] && vim -c vnew "$path"
+
+else
+	echo -e "$scriptRelPath not found"
+	typeOf=$(file -b "$scriptRelPath")
+
+	if [[ $typeOf =~ ^cannot.open ]]; then
+		echo
+		exit 1
+	fi
+
+	echo -e "    $typeOf\n"
+	exit 1
+fi
