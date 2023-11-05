@@ -1,0 +1,57 @@
+#!/bin/bash
+
+script="$(basename "$0")"
+
+usage() {
+	cat <<-DOC
+	Usage: $script [FILE]
+
+	Given a url, produces it in markdown format [url](url).
+	Truncates long urls over 92 chars (to fit on reddit in one line).
+
+	Examples:
+        url=www.site.com
+        echo $url | $script
+        $script <(echo $url)
+        $script /tmp/cite.txt
+DOC
+}
+
+formatURL() {
+	local url=$1
+
+	# Remove (http://, https://, www.)
+	url=${url#http://}
+	url=${url#https://}
+	url=${url#www\.}
+
+	# Replace 6 or more consecutive digits with "..."
+	regex='s/\d{6,}[^\/\n]+/.../g'		# https://regex101.com/r/1TwqwG
+	url=$(perl -pe "$regex" <<< "$url")
+
+	# Truncate and add "..." if length is greater than 92
+	if [ ${#url} -gt 92 ]; then
+		url=${url:0:89}...
+	fi
+
+	echo "$url"
+}
+
+if [[ $1 == h ]]; then
+	usage
+	exit
+fi
+
+if [[ $# == 0 && -t 0 ]]; then
+	usage
+	exit 2
+fi
+
+file=$1
+cnt=1
+while read -r url; do
+	[[ -z "$url" ]] && continue
+	formattedURL=$(formatURL "$url")
+	echo "[$cnt] - [$formattedURL]($url)  "
+	((cnt++))
+done < "${file:-/dev/stdin}"

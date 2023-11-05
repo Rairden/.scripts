@@ -1,0 +1,90 @@
+#!/bin/bash
+
+script="$(basename "$0")"
+searchFuncsAndAliases=false
+searchAll=false
+
+usage() {
+	cat <<-DOC
+	Usage: $script [-fa] <regex>
+
+	Check if a binary exists in your PATH. The default is binaries only (including duplicates).
+
+	Options:
+        -f, --funcs             search only functions + aliases
+        -a, --all               search all (binaries, funcs, aliases)
+DOC
+}
+
+binaries() {
+	IFS=: read -ra pathEntries <<< "$PATH"
+	for pathEntry in "${pathEntries[@]}"; do
+		if [[ -d $pathEntry ]]; then
+			binaries=$(find "$pathEntry" -type f -executable -printf '%f\n' 2> /dev/null | grep -P "$regex" | sort)
+
+			if [[ -n $binaries ]]; then
+				printf "\e[38;5;9mBinaries in %s:\e[0m\n" "$pathEntry"
+				echo "$binaries"
+			fi
+		fi
+	done
+}
+
+funcs() {
+	mkfifo pipe
+
+	headerPrinted=false
+
+	while IFS= read -r line; do
+		if ! $headerPrinted; then
+			printf "\e[38;5;9mFunctions and aliases:\e[0m\n"
+			headerPrinted=true
+		fi
+		echo "$line"
+	done < pipe &
+
+	readOutputPID=$!
+
+	findfunc "$regex" > pipe
+	exitCode=$?
+
+	wait $readOutputPID
+	rm pipe
+
+	if [[ $exitCode = 1 ]]; then
+		echo -e "\nNo matching functions or aliases found."
+	fi
+}
+
+if [[ $# -eq 0 || $1 =~ -[fa] && $# -eq 1 ]]; then
+	usage
+	exit 1
+fi
+
+while [ $# -gt 0 ]; do
+	case $1 in
+	-f | --funcs)
+		searchFuncsAndAliases=true
+		;;
+	-a | --all)
+		searchAll=true
+		;;
+	-h | --help)
+		usage
+		exit
+		;;
+	*)
+		regex=$1
+		;;
+	esac
+	shift
+done
+
+if $searchFuncsAndAliases; then
+	funcs
+elif $searchAll; then
+	binaries
+	funcs
+else
+	binaries
+fi

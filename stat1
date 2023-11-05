@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# stat1 /home/{erik,git}
+# stat1 *
+# stat1 /usr/local/bin/gitea
+# 777  lrwxrwxrwx       root     0 0     root           symbolic link '/usr/local/bin/gitea' -> '/usr/bin/gitea'
+
+sudo stat -c "%5a%12A %10U %5u %-5g %-8G%18F %N" "$@" | sort -k7

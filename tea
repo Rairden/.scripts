@@ -1,0 +1,185 @@
+#!/bin/bash
+
+GITEA_WORK_DIR=/var/lib/gitea
+CFG_DIR=/home/erik/scratch/gitea-cfg/working
+
+setup() {
+	mkdir -p $GITEA_WORK_DIR/{custom,data,log}
+	chown -R git:git $GITEA_WORK_DIR
+	chmod -R 750 $GITEA_WORK_DIR
+	mkdir /etc/gitea
+	chown -R root:git /etc/gitea
+	chmod 770 /etc/gitea
+	chown root:git /usr/local/bin/gitea
+	ln -s /usr/bin/gitea /usr/local/bin &> /dev/null
+}
+
+enable() {
+	stop
+	sudo systemctl daemon-reload
+	sudo systemctl enable --now gitea
+	restart
+}
+
+reload() {
+	# use this if you edit the gitea.service file to avoid restarting the OS
+	sudo systemctl daemon-reload
+}
+
+restart() {
+	sudo systemctl restart gitea
+}
+
+start() {
+	sudo systemctl start gitea
+	gs
+}
+
+stop() {
+	sudo systemctl stop gitea
+}
+
+gs() {
+	sudo systemctl --no-pager status gitea
+}
+
+ps() {
+	sudo -u erik ps -fC gitea
+	echo
+	sudo -u erik ps -o pid,user,state,args -C gitea
+}
+
+ssh() {
+	sudo -i -u erik ssh -T git@localhost
+	bat /home/git/.ssh/authorized_keys
+}
+
+# delete app.ini and restore original. Go to localhost:3000 to redo config
+resetcfg() {
+	set -x
+	cp $CFG_DIR/app.ini /etc/gitea/app.ini
+	chown root:git $_
+	cp $CFG_DIR/gitea.conf /usr/lib/tmpfiles.d/gitea.conf
+	cp $CFG_DIR/usr-gitea.service /usr/lib/systemd/system/gitea.service
+	curl -o /etc/systemd/system/gitea.service https://raw.githubusercontent.com/go-gitea/gitea/main/contrib/systemd/gitea.service
+
+	if [ $? -ne 0 ];then
+		cp $CFG_DIR/etc-gitea.service /etc/systemd/system/gitea.service
+	fi
+	enable
+}
+
+push() {
+	sudo -iu erik bash -c 'cd /home/erik/go/src/twitch-titles; set -x; cat .git/config'
+	sudo -iu erik bash -c 'cd /home/erik/go/src/twitch-titles; echo; set -x; git push -u origin main'
+}
+
+serviceInstall() {
+	curl -o /etc/systemd/system/gitea.service https://raw.githubusercontent.com/go-gitea/gitea/main/contrib/systemd/gitea.service
+	enable
+}
+
+edit() {
+	vim \
+	/etc/gitea/app.ini \
+	/etc/gitea/app.example.ini \
+	/usr/lib/systemd/system/gitea.service \
+	/etc/systemd/system/gitea.service \
+	/etc/systemd/system/gitea.service.d/*
+}
+
+# backup files
+cp1() {
+	dir=$1
+	sudo -iu erik cp /etc/gitea/app.ini "$dir"
+	sudo -iu erik cp /usr/lib/systemd/system/gitea.service "$dir/usr-gitea.service"
+	sudo -iu erik cp /etc/systemd/system/gitea.service "$dir/etc-gitea.service"
+}
+
+getperms() {
+	stat1 /usr/bin/gitea
+	stat1 /usr/local/bin/gitea
+	echo
+
+	stat1 /etc/gitea
+	stat1 /etc/gitea/app.ini
+	stat1 $GITEA_WORK_DIR
+	stat1 $GITEA_WORK_DIR/*
+	echo
+
+	stat1 /usr/lib/systemd/system/gitea.service
+	stat1 /etc/systemd/system/gitea.service
+	stat1 /etc/systemd/system/gitea.service.d/*
+}
+
+cfg() {
+	sudo -i -u erik subl /etc/gitea/app.ini
+	sudo -i -u erik subl /usr/lib/systemd/system/gitea.service
+	sudo -i -u erik subl /etc/systemd/system/gitea.service
+}
+
+uninstall() {
+	stop
+	systemctl disable gitea.service
+	pacman -Rscn gitea && clean
+}
+
+install() {
+	if ! isFullyUninstalled;then
+		echo "Not fully uninstalled."
+		exit 1
+	fi
+
+	if pacman -S gitea; then
+		setup
+		resetcfg
+	fi
+}
+
+isFullyUninstalled() {
+	[ ! -d $GITEA_WORK_DIR ] && [ ! -d /etc/gitea ] &&
+	[ ! -f /etc/systemd/system/gitea.service ] &&
+	[ ! -f /usr/lib/systemd/system/gitea.service ] &&
+	[ ! -f /etc/systemd/system/gitea.service.d/override.conf ] &&
+	[ ! -f /etc/systemd/system/gitea.service.d/data-directory.conf ] &&
+	return $?
+}
+
+clean() {
+	stop
+	systemctl disable gitea.service
+	rm -rf $GITEA_WORK_DIR
+	rm -rf /etc/gitea
+	rm -f /etc/gitea/app.ini
+
+	rm -f /etc/systemd/system/gitea.service
+	rm -f /usr/lib/systemd/system/gitea.service	# part of package
+
+	rm -f /etc/systemd/system/gitea.service.d/override.conf			# not there by default (systemctl edit gitea.service)
+	rm -f /etc/systemd/system/gitea.service.d/data-directory.conf	# not there by default (systemctl edit gitea.service)
+
+	if isFullyUninstalled; then
+		echo "Fully uninstalled."
+	else
+		echo "There are some files left over. Please remove them."
+		getperms
+	fi
+}
+
+setupGitUser() {
+	userdel -r git
+	groupdel git
+	rm -rf /home/git
+	useradd -rms /bin/zsh git
+	passwd git	# create a password
+
+	# for new git user to source my scripts in /home/erik, change permissions
+	chown erik:git /home/erik
+}
+
+if [[ $EUID -ne 0 ]]
+	then echo "Please run as root."
+	exit 1
+fi
+
+$*

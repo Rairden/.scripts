@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# to search for the arg -I of curl, run `mans curl -I`
+
+man "$1" | less -p "(^\s+$2\b)|(^\s+--\S+,?\s+$2\b)"

@@ -1,0 +1,8 @@
+#!/bin/bash
+
+cmd=$*
+
+# https://stackoverflow.com/a/62620480
+PS4="\n\033[1;31m>>>\033[0m "
+set -x
+$cmd

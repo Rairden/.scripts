@@ -1,0 +1,70 @@
+#!/bin/bash
+
+# My standard library of helper functions.
+
+debugInit=0
+logg="$HOME/.cache/console.log"
+
+requireBinary() {
+	local binary line
+	binary=$1
+	if ! command -v "$binary" &> /dev/null; then
+		line=$(caller | awk '{print $1}')
+		echo "Error: $binary is not installed. Check line $line."
+		return 1
+	fi
+	return 0
+}
+
+# https://askubuntu.com/questions/811439/bash-set-x-logs-to-file
+debugON() {
+	if ((DEBUG == 1)); then
+		if ((debugInit == 0)); then
+			exec 19>"$logg"
+			debugInit=1
+		else
+			exec 19>>"$logg"
+		fi
+
+		BASH_XTRACEFD=19
+		set -x
+	fi
+}
+
+debugOFF() {
+	# Check if FD 19 is open; otherwise, do not proceed.
+	if ! { exec 19>&-; } 2>/dev/null; then
+		echo "Error: File descriptor 19 is not valid."
+		return 1
+	fi
+	# Re-open FD 19 since we closed it with the check
+	exec 19>>"$logg"
+
+	# Temporarily redirect debugging to /dev/null
+	exec 20>/dev/null
+	BASH_XTRACEFD=20
+	set +x
+
+	# Redirect debugging back to the original file descriptor
+	BASH_XTRACEFD=19
+}
+
+isGitRepo() {
+	dir=$1
+	{ cd "$dir" &> /dev/null; } || return 1
+	{ git rev-parse --show-toplevel && git fsck; } &> /dev/null
+	return $?
+}
+
+hasChanges () {
+	test -n "$(git status --porcelain)"
+	return $?
+}
+
+isYoutubeURL() {
+	url=$1
+	# https://regex101.com/r/vHEc61/1
+	validURL="^((?:https?:)?\/\/)?((?:www|m)\.)?((?:youtube(-nocookie)?\.com|youtu.be))(\/(?:[\w\-]+\?v=|embed\/|v\/)?)([\w\-]+)(\S+)?$"
+	echo "$url" | grep -Pq "$validURL"
+	return $?
+}

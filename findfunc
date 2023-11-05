@@ -1,0 +1,11 @@
+#!/bin/zsh
+
+source /home/erik/.zshrc
+regex=$1
+results=($(print -l ${(k)aliases} ${(k)functions} | grep -P "$regex"))
+
+if [ ${#results[@]} -eq 0 ]; then
+	exit 1
+fi
+
+printf "%s\n" "${results[@]}"

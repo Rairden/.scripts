@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# Logs stdout and the command ran. Example:
+#   logit curl -Is google.com
+
+log=/home/erik/.cache/tmp.log
+cmd=$*
+
+(set -x; $cmd | (tee /dev/tty) 2>/dev/null) &>> $log
+sed -i -e "s/\r//g" $log	# Remove carriage returns. Some cmds like curl have dos line endings (\r\n).

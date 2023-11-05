@@ -1,0 +1,4 @@
+#!/bin/bash
+
+sudo pacman -Scc
+sudo rm -rf ~/.cache

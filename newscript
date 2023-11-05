@@ -1,0 +1,175 @@
+#!/bin/bash
+
+script="$(basename "$0")"
+basic=false
+openEditor=false
+editor=idea
+
+usage() {
+	cat <<-DOC
+	Usage: $script [-beh] [file]
+
+	Creates a new shell template. Named tmp#.
+
+	You might want a full or basic template. A full template has a flags mechanism.
+	Default is "full".
+
+	Examples:
+        $script
+        $script -b -e
+        $script -e tea.sh
+
+	Options:
+        -b, --basic        create basic template
+        -e, --editor       open in txt editor
+        -h, --help         show this help message
+DOC
+}
+
+template=$(cat <<\EOF
+#!/bin/bash
+
+usage() {
+	script="./$(basename "$0")"
+
+	cat <<-DOC
+	Usage: $script {-s|-t} PATTERN
+
+	Summary, help, etc.
+
+	Options:
+        -s, --slong        slong explanation
+        -t, --tlong        tlong explanation
+        -h, --help         show this help message
+DOC
+}
+
+if [ $# -eq 0 ]; then
+	usage
+	exit
+fi
+
+if [ $# -lt 2 ]; then
+	echo "Try '$script -h' for more information."
+	exit 1
+fi
+
+while [ $# -gt 0 ]; do
+	case $1 in
+	-s | --slong)
+		# code here
+		;;
+	-t | --tlong)
+		# code here
+		;;
+	-h | --help)
+		usage
+		exit
+		;;
+	*)
+		# code here
+		;;
+	esac
+	shift
+done
+EOF
+)
+
+createBasic() {
+	local file=$1
+	printf "#!/bin/bash\n\n" > "$file"
+	chmod +x "$file"
+
+	echo "Created a new basic script: $file"
+}
+
+createFull() {
+	local file=$1
+	echo "$template" > "$file"
+	chmod +x "$file"
+
+	echo "Created a new full script: $file"
+}
+
+requireBinary() {
+	local binary line
+	binary=$1
+	if ! command -v "$binary" &> /dev/null; then
+		line=$(caller | awk '{print $1}')
+		echo "Error: $binary is not installed. Check line $line."
+		return 1
+	fi
+	return 0
+}
+
+inPath() {
+	local file err
+	file=$1
+	err="Error: $file already exists in PATH."
+
+	if [[ $SHELL =~ zsh ]]; then
+		zsh -c "source ~/.zshrc; command -v $file" &> /dev/null
+		exitCode=$?
+
+		if [[ $exitCode == 0 ]]; then
+			echo "$err"
+			return 0
+		fi
+	fi
+
+	if command -v "$file" &> /dev/null; then
+		echo "$err"
+		return 0
+	fi
+
+	return 1
+}
+
+new() {
+	local file=$1
+	if $basic; then
+		createBasic "$file"
+	else
+		createFull "$file"
+	fi
+}
+
+while [ $# -gt 0 ]; do
+	case $1 in
+	-b | --basic)
+		basic=true
+		;;
+	-e | --editor)
+		requireBinary "$editor" || exit $?
+		openEditor=true
+		;;
+	-h | --help)
+		usage
+		exit
+		;;
+	*)
+		file=$1
+	esac
+	shift
+done
+
+inPath "$file" && exit
+
+if [[ -n $file ]]; then
+	new "$file"
+	$openEditor && "$editor" "$file" &> /dev/null & disown
+	exit
+fi
+
+cnt=1
+while true; do
+	file="tmp${cnt}"
+
+	if [[ ! -f "$file" ]]; then
+		new "$file"
+		$openEditor && "$editor" "$file" &> /dev/null & disown
+		break
+	fi
+
+	((cnt++))
+done

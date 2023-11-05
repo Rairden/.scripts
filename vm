@@ -1,0 +1,21 @@
+#!/bin/bash
+
+start() {
+	systemctl start libvirtd
+	systemctl start spice-vdagentd.service
+	virsh net-start default
+	sudo -u	erik /usr/bin/virt-manager
+}
+
+stop() {
+	systemctl stop libvirtd
+	systemctl stop spice-vdagentd.service
+	virsh net-destroy default
+}
+
+if [[ $EUID -ne 0 ]]
+	then echo "Please run as root."
+	exit 1
+fi
+
+$*

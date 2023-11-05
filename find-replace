@@ -1,0 +1,36 @@
+#!/bin/bash
+
+# used to test a find/replace regex for multiple files
+
+usage() {
+	printf "\nRun a command like these:\n\t%s\n\t%s\n\t%s\n" \
+		"perl -pi -e 's/find/replace/g' file.txt" \
+		"fd -0 search | xargs -0 perl -pi -e 's/search/replace/gsm'" \
+		"rg -uul0 search | xargs -0 perl -pi -e 's/search/replace/g'" \
+
+	printf '\n%s\n%s\n' "fd - filter by filenames." "rg - filter by regex."
+}
+
+if [[ $1 = -h || $1 = --help ]]; then
+	usage
+	return 1 2>/dev/null	# safely exit if sourced
+	exit 1
+fi
+
+if [[ ${BASH_SOURCE[0]} = "$0" ]]; then
+	echo "This script must be sourced, not executed."
+	return 1 2>/dev/null	# safely exit if sourced
+	exit 1
+fi
+
+tmpdir=$(mktemp -d)
+rsync -a "$PWD"/ "$tmpdir"
+cd "$tmpdir" || exit 1
+
+[ -f .gitignore ] && rm .gitignore
+[ -d .git ] && rm -rf .git
+git init
+git add .
+git commit -m "init" 1> /dev/null
+git switch -c dev 2> /dev/null
+usage

@@ -1,0 +1,58 @@
+#!/bin/bash
+
+script="$(basename "$0")"
+regex=$1
+regex="${regex#/}"
+regex="${regex%/}"
+
+usage() {
+	cat <<-DOC
+	Usage: $script [regex]
+
+	Uses a fd RE2 regex to search for video files. Trims input trailing slashes.
+	Prints out metadata (bit rate, duration, size, filename, resolution, fps, codec).
+
+	Requires: fd, mpv, mediainfo
+
+	Examples:
+        $script
+        $script peach
+        $script peach/
+DOC
+}
+
+requireBinary() {
+	local binary line
+	binary=$1
+	if ! command -v "$binary" &> /dev/null; then
+		line=$(caller | awk '{print $1}')
+		echo "Error: $binary is not installed. Check line $line."
+		return 1
+	fi
+	return 0
+}
+
+requireBinary fd || exit $?
+requireBinary mediainfo || exit $?
+requireBinary mpv || exit $?
+
+if [[ $1 = -h || $1 = --help ]]; then
+	usage
+	exit
+fi
+
+ext="-e mp4 -e m4v -e webm -e mkv -e avi -e wmv -e mov -e flv"
+format=$'Video;%Width%x%Height%,%FrameRate%fps,%CodecID%,\n'
+format+='General;%OverallBitRate/String%,%Duration/String2%,%FileSize/String%,%FileName%,%Format%,'
+out=$(fd $ext "$regex" \
+	-x mediainfo --Output="$format" \
+	| sort -t, -k4,4 -nk5,5 \
+	| column -t -s ',')
+
+if [[ -n $out ]]; then
+	printf '%s\n\n' "$out"
+	read -rp "Open files? [y,Y] "
+	if [[ $REPLY =~ ^[yY]$ ]]; then
+		fd $ext "$regex" -X mpv &> /dev/null &
+	fi
+fi
