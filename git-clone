@@ -1,93 +1,76 @@
 #!/bin/bash
 
+repos="$HOME/repos"
+mkdir -p "$repos"
+
 usage() {
 	script="./$(basename "$0")"
 
-	cat << DOC
+	cat <<-DOC
+	Usage: $script url
 
-	Usage: $script [options] url
-
-	Clones a git repo. Makes one directory for each username (edit dir=).
-	To automatically cd into the project directory, source this script (source $script url).
+	Clones a git repo. Makes one directory for each username (edit repos=).
+	To automatically cd into the project directory, source this script (. $script url).
 
 	To download many repos at once you could run:
-		while read -r line; do $script \$line; done < in.txt
+        while read -r line; do $script \$line; done < in.txt
 
-	This script requires the dependency pcregrep. Install with either:
-		sudo apt-get install pcregrep
-		sudo pacman -S pcre
-
-	Options:
-		-b, --basic         uses basic regex
-		-a, --advanced      uses advanced regex (default)
-		-h, --help          show this help message
+	This script requires pcregrep. Install with either:
+        sudo apt-get install pcregrep
+        sudo pacman -S pcre
 DOC
-	exit 1
 }
+
+isValidGitURL() {
+	url=$1
+	validURL="((git|ssh|http(s)?)|(git@[\w\.]+))(:(//)?)([\w\.@\:/\-~]+)(\.git)(/)?"	# https://regex101.com/r/h7Ql2c
+	echo "$url" | grep -Pq "$validURL"
+	return $?
+}
+
+requireBinary() {
+	local binary=$1
+	if ! command -v "$binary" &> /dev/null; then
+		echo "Error: $binary is not installed."
+		return 1
+	fi
+	return 0
+}
+
+requireBinary pcregrep || exit $?
 
 if [ $# -eq 0 ]; then
 	usage
-fi
-
-dir="$HOME/repos"
-basic=false
-
-[ -d "$dir" ] || mkdir "$dir"
-cd "$dir" || exit 1
-
-while [ "$1" != "" ]; do
-	case $1 in
-	-b | --basic)
-		basic=true
-		regex="(https://|git@)git(hub|lab)\.com(/|:)(\w+).*\.git"
-		url=$2
-		break
-		;;
-	-a | --advanced)
-		regexFilter="((\w|-)+)/((\w|-)+$)"
-		;;
-	-h | --help)
-		usage
-		;;
-	*)
-		regex="((git|ssh|http(s)?)|(git@[\w\.]+))(:(//)?)([\w\.@\:/\-~]+)(\.git)(/)?"
-		regexFilter="((\w|-)+)/((\w|-)+$)"
-		url=$1
-		;;
-	esac
-	shift
-done
-
-echo "$url" | pcregrep -q "$regex"
-if [ $? -ne 0 ]; then
-	echo "Not a proper git repo URL."
-	return 1 2> /dev/null	# safely exit if sourced
 	exit 1
 fi
 
-if $basic; then
-	repo=$(echo "$url" | pcregrep "$regex")
-	user=$(echo "$repo" | pcregrep -o4 "$regex")
-	proj="$(basename "$repo" .git)"
+cd "$repos" || exit 1
+url=$1
+
+if ! isValidGitURL "$url"; then
+	echo "Not a valid git repo URL."
+	return 1 2>/dev/null	# safely exit if sourced
+	exit 1
+fi
+
+regex="(https|git)(:\/\/|@)([^\/:]+)[\/:]([^\/:]+)\/(.+)(.git)*"	# https://regex101.com/r/FgBzpQ
+aur="https://aur\.archlinux\.org/(.+)\.git"
+relpath=
+
+if [[ $url =~ $regex ]]; then
+	site=$(echo "$url" | pcregrep -o3 "$regex")
+	user=$(echo "$url" | pcregrep -o4 "$regex")
+	repo=$(echo "$url" | pcregrep -o5 "$regex")
+	repo="$(basename "$repo" .git)"
+	relpath="$site/$user/$repo"
+elif [[ $url =~ $aur ]]; then
+	repo=$(echo "$url" | pcregrep -o1 "$aur")
+	relpath=aur/"$repo"
 else
-	repo=$(echo "$url" | pcregrep -o7 "$regex")
-	user=$(echo "$repo" | pcregrep -o1 "$regexFilter")
-	proj=$(echo "$repo" | pcregrep -o3 "$regexFilter")
+	repo=$(basename "$url" .git)
+	relpath=misc/"$repo"
 fi
 
-[ -d "$user" ] || mkdir "$user"
-cd "$user" || exit 1
-
-if [ -d "$proj" ]; then
-	echo "Repo already exists."
-
-	if [ "${BASH_SOURCE[0]}" != "$0" ]; then
-		cd - > /dev/null || exit 1
-		return 1
-	fi
-
-	exit
+if git clone "$url" "$relpath"; then
+	cd "$relpath" || return 1
 fi
-
-git clone "$url"
-cd "$proj" || exit 1

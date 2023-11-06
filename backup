@@ -1,46 +1,25 @@
 #!/bin/bash
 
-# Rsync usage
-#	rsync -a src dest
-#	rsync ip:dir ip:dir
-#	rsync -avh file.zip erik@108.61.119.116:~/Docs
+usage() {
+	script="$(basename "$0")"
 
-# Usage:
-#	0) Both sender/receiver must have the same directory layout. No spaces allowed in either path.
-#	1) Navigate to the directory you want to backup
-#	2) Run one of these two commands
-#		A) backup copyDir 108.61.119.116
-#		B) backup copyDir 108.61.119.116 send -n
-#
-# To receive:	run A
-# To send:		run B
-#
-# Arguments:
-#	-n	 = dry run
-#	send = you send files to remote
+	cat <<-DOC
+	Usage: $script [Options] {address}
 
-copyDir() {
-	copyDir=$(pwd)
-	parentDir=$(cd .. && pwd)
+	rsync ip:dir ip:dir
+	rsync -avh file.zip erik@108.61.119.116:~/Docs
 
-	if [ "$2" == "send" ]; then
-		output=$(rsync -avh $3 --stats "$copyDir" "$1":"$parentDir")
-		if [ "$3" == "-n" ]; then
-			echo -e "\n      (DRY RUN)"
-		fi
+	0) Both sender/receiver must have the same directory layout. No spaces allowed in either path.
+	1) Navigate to the directory you want to backup
+        a) $script -r rairden.dev       # receive
+        b) $script -s -n rairden.dev    # send and -n is dry-run
 
-		echo -e "       Run cmd: rsync -avh $3 --stats $copyDir $1:$copyDir"
-		printSummary "$output"
-		exit
-	fi
-
-	if [ "$2" == "-n" ]; then
-		echo -e "\n      (DRY RUN)"
-	fi
-
-	output=$(rsync -avh $2 --stats "$1":"$copyDir" "$parentDir")
-	echo -e "       Run cmd: rsync -avh $2 --stats $1:$copyDir $parentDir"
-	printSummary "$output"
+	Options:
+        -s, --send         send
+        -r, --receive      receive
+        -n, --dry-run      dry-run
+        -h, --help         show this help message
+DOC
 }
 
 printSummary() {
@@ -50,4 +29,54 @@ printSummary() {
 	echo "Transfer total: $transferSize"
 }
 
-"$@"
+if [ $# -lt 1 ]; then
+	echo "Try '$script --help' for more information."
+	exit 1
+fi
+
+send=false
+receive=false
+dryrun=false
+dry=
+
+copyDir=$(pwd)
+parentDir=$(dirname "$copyDir")
+
+while [ $# -gt 0 ]; do
+	case $1 in
+	-s | --send)
+		send=true
+		;;
+	-r | --receive)
+		receive=true
+		;;
+	-n | --dry-run)
+		dryrun=true
+		dry='-n'
+		;;
+	-h | --help)
+		usage
+		exit 1
+		;;
+	*)
+		host=$1
+	esac
+	shift
+done
+
+if $dryrun; then
+	echo -e "      (DRY RUN)"
+fi
+
+if $send; then
+	output=$(rsync -avh --del $dry --stats "$copyDir" "$host:$parentDir")
+	echo -e "          [CMD] rsync -avh $dry --stats $copyDir $host:$copyDir"
+	printSummary "$output"
+elif $receive; then
+	output=$(rsync -avh $dry --stats "$host:$copyDir" "$parentDir")
+	echo -e "          [CMD] rsync -avh $dry --stats $host:$copyDir $parentDir"
+	printSummary "$output"
+else
+	echo "Must give -s or -r argument to send or receieve. Try -h for more info."
+	exit
+fi

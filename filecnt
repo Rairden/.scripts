@@ -3,22 +3,17 @@
 usage() {
 	script="./$(basename "$0")"
 
-	cat << DOC
-
+	cat <<-DOC
 	Usage: $script [OPTIONS]
 
 	Counts all the files in the current directory.
 
-	Both Sublime Text and VS Code space/tab convertor behave identically. They only touch leading characters,
-	and not inline text (say vertically aligned comments). This tool differs by converting the entire file.
-
 	Options:
-		-f, --find          uses find (default)
-		-r, --rsync         uses rsync
-		-t, --tree          uses tree
-		-a, --all           runs all commands
+        -f, --find          uses find (default)
+        -r, --rsync         uses rsync
+        -t, --tree          uses tree
+        -a, --all           runs all commands
 DOC
-	exit 1
 }
 
 rsync1() {
@@ -33,7 +28,7 @@ find1() {
 }
 
 tree1() {
-	echo -e "tree -a\n"
+	echo -e "[CMD] tree -a\n"
 	tree -a
 }
 
@@ -64,7 +59,7 @@ while [ $# -gt 0 ]; do
 		all; exit
 		;;
 	*)
-		usage
+		usage; exit 1
 		;;
 	esac
 	shift

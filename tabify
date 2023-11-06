@@ -3,24 +3,22 @@
 usage() {
 	script="./$(basename "$0")"
 
-	cat << DOC
-
+	cat <<-DOC
 	Usage: $script {-s|-t} PATTERN
 
 	Converts files from spaces to tabs, or vice versa.
 
 	Example: To convert a bunch of files to spaces that are named like "file123.py"
-		$script -s "fi*.py"
+        $script -s "fi*.py"
 
 	Both Sublime Text and VS Code space/tab convertor behave identically. They only touch leading characters,
 	and not inline text (say vertically aligned comments). This tool differs by converting the entire file.
 
 	Options:
-		-s, --spaces        convert file(s) to spaces
-		-t, --tabs          convert file(s) to tabs
-		-h, --help          show this help message
+        -s, --spaces        convert file(s) to spaces
+        -t, --tabs          convert file(s) to tabs
+        -h, --help          show this help message
 DOC
-	exit 1
 }
 
 spaces=false
@@ -31,7 +29,7 @@ if [ $# -eq 0 ]; then
 	exit 1
 fi
 
-while [ "$1" != "" ]; do
+while [ $# -gt 0 ]; do
 	case $1 in
 	-s | --spaces)
 		spaces=true
@@ -41,6 +39,7 @@ while [ "$1" != "" ]; do
 		;;
 	-h | --help)
 		usage
+		exit 1
 		;;
 	*)
 		glob=$1
@@ -60,6 +59,7 @@ elif $tabs; then
 	exp="unexpand -t 4"
 else
 	usage
+	exit 1
 fi
 
 find ! \( -path "*/.git" -prune \

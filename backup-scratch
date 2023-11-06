@@ -1,9 +1,22 @@
 #!/bin/bash
 
 src=/home/erik/scratch
-dest=/run/media/erik/storage/temp
+dst=/run/media/erik/storage/temp
 
 [ -d "$src" ] || exit 1
-[ -d "$dest" ] || exit 1
+[ -d "$dst" ] || exit 1
 
-rsync -a --delete "$src" "$dest"
+deletes=$(rsync -an --delete --info=all0,del "$src" "$dst" | tee /dev/tty | grep -c '^deleting')
+
+if [[ $deletes -gt 1000 ]]; then
+	echo -e "\nWarning: deleting $deletes files."
+	read -p "Proceed? [y,Y] " response
+	echo
+	if [[ $response =~ ^[yY]$ ]]; then
+		rsync -a --delete --info=progress2 "$src" "$dst"
+		exit
+	fi
+	exit 1
+fi
+
+rsync -a --delete --info=progress2 "$src" "$dst"

@@ -3,8 +3,7 @@
 usage() {
 	script="./$(basename "$0")"
 
-	cat << DOC
-
+	cat <<-DOC
 	Usage: $script [OPTION]...
 
 	This script grabs your .gitignore templates from 'dir' depending on your programming language.
@@ -15,19 +14,13 @@ usage() {
 	3) Run $script X	   (replace X with a lang: go, c, python)
 
 	Options:
-		-n, --no-commit     setup, but do not commit
-		-h, --help          show this help message
+        -n, --no-commit     setup, but do not commit
+        -h, --help          show this help message
 DOC
-	exit 1
 }
 
 gitinit() {
 	cd "$proj" || exit 1
-
-	if [ ! -f .gitignore ]; then
-		echo -e "[CMD] touch .gitignore\n"
-		touch .gitignore
-	fi
 
 	git init
 	git add .
@@ -68,13 +61,14 @@ if [ $# -eq 0 ]; then
 	exit
 fi
 
-while [ "$1" != "" ]; do
+while [ $# -gt 0 ]; do
 	case $1 in
 	-n | --no-commit)
 		commit=false
 		;;
 	-h | --help)
 		usage
+		exit 1
 		;;
 	*)
 		lang=$1

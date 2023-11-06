@@ -1,15 +1,32 @@
 #!/bin/bash
 
-dst="$HOME/scratch/backup"
+# backup my files to two locations
 
-[ -d "$dst" ] || exit 1
+readonly root=/run/media/erik/storage
+dst1=/run/media/erik/storage/temp
+dst2="$HOME/scratch/backup"
 
-rsync -a --stats --delete ~/.dotfiles "$dst"
-rsync -a --stats --delete ~/.scripts "$dst"
+backup() {
+	dst=$1
+	[ -d "$dst" ] || return 1
 
-rsync -a --stats --delete  ~/IdeaProjects "$dst"
-rsync -a --stats --delete  ~/PycharmProjects "$dst"
-rsync -a --stats --delete  ~/WebstormProjects "$dst"
-rsync -a --stats --delete  ~/MyWebsites "$dst"
-rsync -a --stats --delete  ~/Notes "$dst"
-rsync -a --stats --delete "$GOPATH"/src "$dst"
+	rsync -a --info=progress2,del --del ~/.dotfiles "$dst"
+	rsync -a --info=progress2,del --del ~/.scripts "$dst"
+	rsync -a --info=progress2,del --del ~/IdeaProjects "$dst"
+	rsync -a --info=progress2,del --del ~/PycharmProjects "$dst"
+	rsync -a --info=progress2,del --del ~/WebstormProjects "$dst"
+	rsync -a --info=progress2,del --del ~/MyWebsites "$dst"
+	rsync -a --info=progress2,del --del ~/Notes "$dst"
+	rsync -a --info=progress2,del --del "$GOPATH"/src "$dst"
+}
+
+dst1=${dst1%/}
+dst2=${dst2%/}
+
+if [[ $dst1 = "$root" || $dst2 = "$root" ]]; then
+	echo "Protecting against deleting the entire hard drive. Exiting."
+	exit 1
+fi
+
+backup "$dst1"
+backup "$dst2"

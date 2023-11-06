@@ -1,16 +1,11 @@
 #!/bin/bash
 
-run() {
-	echo -e "\n[CMD] $1"
-	$1
-}
-
 cd "$(git rev-parse --show-toplevel)" || exit 1
 
-run "tree .git/objects"
-run "du -sh .git/objects"
+traceit tree .git/objects
+traceit du -sh .git/objects
 
-run "bat .git/config"
-run "git --no-pager branch -a"
-run "bat .git/HEAD"
-run "git fsck"
+traceit bat .git/config
+traceit git --no-pager branch -a
+traceit bat .git/HEAD
+traceit git fsck
