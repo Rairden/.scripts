@@ -1,0 +1,54 @@
+#!/bin/bash
+
+# Run this where you want your new bash project located.
+# Creates an .idea folder for Intellij, with the 3 required files. Then launches Intellij.
+
+workingDir=$(basename "$PWD")
+
+iml=$(cat <<-EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<module version="4">
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
+    <content url="file://\$MODULE_DIR$" />
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+</module>
+EOF
+)
+
+modules=$(cat <<-EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://\$PROJECT_DIR$/.idea/$workingDir.iml" filepath="\$PROJECT_DIR$/.idea/$workingDir.iml" />
+    </modules>
+  </component>
+</project>
+EOF
+)
+
+misc=$(cat <<-EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_15" default="true" />
+</project>
+EOF
+)
+
+command -v idea &> /dev/null || exit 1
+
+if [[ -d .idea ]]; then
+	echo "The .idea dir already exists. Aborting."
+	exit 1
+fi
+
+mkdir -p .idea
+
+echo "$iml" > .idea/"$workingDir".iml
+echo "$modules" > .idea/modules.xml
+echo "$misc" > .idea/misc.xml
+
+idea . &> /dev/null & disown

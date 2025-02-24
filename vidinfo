@@ -1,9 +1,16 @@
 #!/bin/bash
 
 script="$(basename "$0")"
-regex=$1
-regex="${regex#/}"
-regex="${regex%/}"
+file=$1
+ARGC=$#
+declare -a videos
+declare -a metadata
+resultFile=$(mktemp)
+metaFile=$(mktemp)
+
+ext="-e mp4 -e m4v -e webm -e mkv -e avi -e wmv -e mov -e flv"
+format=$'Video;%Width%x%Height%,%FrameRate%fps,%CodecID%,\n'
+format+='General;%OverallBitRate/String%,%Duration/String2%,%FileSize/String%,%FileName%,%Format%,'
 
 usage() {
 	cat <<-DOC
@@ -15,44 +22,114 @@ usage() {
 	Requires: fd, mpv, mediainfo
 
 	Examples:
-        $script
         $script peach
-        $script peach/
+        $script https://domain.com/peach/
+        $script -d 600 peach	# videos longer than 600s (10 mins)
 DOC
 }
 
-requireBinary() {
-	local binary line
-	binary=$1
-	if ! command -v "$binary" &> /dev/null; then
-		line=$(caller | awk '{print $1}')
-		echo "Error: $binary is not installed. Check line $line."
-		return 1
+requires() {
+	if ! command -v "$1" &>/dev/null; then
+		echo "Requires $1"
+		exit 1
 	fi
-	return 0
 }
 
-requireBinary fd || exit $?
-requireBinary mediainfo || exit $?
-requireBinary mpv || exit $?
+requires fd
+requires mediainfo
+requires mpv
 
-if [[ $1 = -h || $1 = --help ]]; then
-	usage
-	exit
+retypeCMD() {
+	xdotool type "$(basename ${BASH_SOURCE}) " && exec zsh
+}
+
+setName() {
+	if [[ $ARGC -gt 1 ]]; then
+		file=$1
+	fi
+
+	if [[ $file =~ ^https?:// ]]; then
+		name=$(basename "$file")
+	else
+		name="${file#/}"
+		name="${name%/}"
+	fi
+}
+
+getDuration() {
+	duration=$(mediainfo --Output="General;%Duration%" "$1")  # Get duration in milliseconds
+	duration=${duration%.*}			# truncate decimal part
+	duration=$((duration / 1000))	# Convert to seconds
+	echo $duration
+}
+
+populateArray() {
+	fd $ext "$name" > "$resultFile"
+	mapfile -t videos < "$resultFile"
+}
+
+basic() {
+	for f in "${videos[@]}"; do
+		metadata+=("$(mediainfo "$f" --Output="$format")")
+	done
+
+	result=("${videos[@]}")
+	writeMetaData
+}
+
+filterDuration() {
+	duration=$1
+	setName "$2"
+	populateArray
+	for f in "${videos[@]}"; do
+		dur=$(getDuration "$f")
+		if (("$dur" > "$duration")); then
+			result+=("$f")
+			metadata+=("$(mediainfo "$f" --Output="$format")")
+		fi
+	done
+
+	writeMetaData
+}
+
+writeMetaData() {
+	printf '%s\n' "${metadata[@]}" | sort -t, -k4,4 -nk5,5 | column -t -s ',' > "$metaFile"
+}
+
+if [[ $# -eq 0 ]]; then
+	echo "Provide at least one argument."
+	exit 1
 fi
 
-ext="-e mp4 -e m4v -e webm -e mkv -e avi -e wmv -e mov -e flv"
-format=$'Video;%Width%x%Height%,%FrameRate%fps,%CodecID%,\n'
-format+='General;%OverallBitRate/String%,%Duration/String2%,%FileSize/String%,%FileName%,%Format%,'
-out=$(fd $ext "$regex" \
-	-x mediainfo --Output="$format" \
-	| sort -t, -k4,4 -nk5,5 \
-	| column -t -s ',')
+trap retypeCMD EXIT
 
-if [[ -n $out ]]; then
-	printf '%s\n\n' "$out"
+while [ $# -gt 0 ]; do
+	case $1 in
+	-d | --duration)
+		shift
+		filterDuration "$1" "$2"
+		break
+		;;
+	-h | --help)
+		usage
+		exit
+		;;
+	*)
+		setName "$1"
+		populateArray
+		basic
+		;;
+	esac
+	shift
+done
+
+mapfile -t metadata < "$metaFile"
+
+if [[ ${#metadata[@]} -gt 0 ]]; then
+	cat "$metaFile"
+	echo
 	read -rp "Open files? [y,Y] "
 	if [[ $REPLY =~ ^[yY]$ ]]; then
-		fd $ext "$regex" -X mpv &> /dev/null &
+		mpv "${result[@]}" &>/dev/null &
 	fi
 fi
