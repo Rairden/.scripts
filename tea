@@ -63,15 +63,10 @@ resetcfg() {
 	cp $CFG_DIR/usr-gitea.service /usr/lib/systemd/system/gitea.service
 	curl -o /etc/systemd/system/gitea.service https://raw.githubusercontent.com/go-gitea/gitea/main/contrib/systemd/gitea.service
 
-	if [ $? -ne 0 ];then
+	if [ $? -ne 0 ]; then
 		cp $CFG_DIR/etc-gitea.service /etc/systemd/system/gitea.service
 	fi
 	enable
-}
-
-push() {
-	sudo -iu erik bash -c 'cd /home/erik/go/src/twitch-titles; set -x; cat .git/config'
-	sudo -iu erik bash -c 'cd /home/erik/go/src/twitch-titles; echo; set -x; git push -u origin main'
 }
 
 serviceInstall() {
@@ -125,7 +120,7 @@ uninstall() {
 }
 
 install() {
-	if ! isFullyUninstalled;then
+	if ! isFullyUninstalled; then
 		echo "Not fully uninstalled."
 		exit 1
 	fi
