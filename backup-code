@@ -28,5 +28,5 @@ if [[ $dst1 = "$root" || $dst2 = "$root" ]]; then
 	exit 1
 fi
 
-backup "$dst1"
+# backup "$dst1"
 backup "$dst2"

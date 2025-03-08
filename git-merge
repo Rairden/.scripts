@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# Merges your current branch into main
+
+if [[ $1 =~ -h|--help ]]; then
+	echo "Merges your current branch into main."
+	exit
+fi
+
+merge() {
+	git checkout main
+	git merge "$currentBranch"
+	git checkout "$currentBranch"
+}
+
+currentBranch=$(git rev-parse --abbrev-ref HEAD)
+currentHash=$(git rev-parse "$currentBranch")
+mainHash=$(git rev-parse main)
+
+if [[ $mainHash == "$currentHash" ]]; then
+	echo "No differences between $currentBranch and main. Nothing to merge."
+	exit 1
+fi
+
+if [[ $currentBranch == main ]]; then
+	echo "Doing nothing. First, switch to the branch you want to merge into main."
+else
+	echo -e "Merging $currentBranch into main and switching back.\n"
+	merge
+fi
+
+echo
+git --no-pager log --date=short --graph --pretty="%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%ad) %C(bold blue)<%an>%Creset"
