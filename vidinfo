@@ -40,7 +40,13 @@ requires mediainfo
 requires mpv
 
 retypeCMD() {
-	xdotool type "$(basename ${BASH_SOURCE}) " && exec zsh
+	interactiveShell=$(ps -o comm= -p $PPID)
+
+	if [[ $interactiveShell == zsh ]]; then
+		xdotool type "$(basename ${BASH_SOURCE}) " && exec zsh
+	elif [[ $interactiveShell == bash ]]; then
+		xdotool type "$(basename ${BASH_SOURCE}) " & disown
+	fi
 }
 
 setName() {
